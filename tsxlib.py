@@ -51,59 +51,34 @@ class mount(object):
     ## END - basic command library
 
     def park_safely(self):
+        # 'Safely' is subjective
+        # This command will do the following as a "safe" park
+        # 1) tsxcheck() - verify TSX is running
+        # 2) is_parked() - see if the mount is parked first
+        # 3) find_home() - this make sure we know where we are
+        # 4) parkdnd() - park and don't disconnect.
+        # 5) is_parked() - see if we're parked again.
+
+        # TODO - trap on TSX not being up
         self.tsxcheck()
+        # TODO - if parked, do we really want to home?
+        # TODO - verify that parked and appropriate absolute position match
         self.is_parked()
+        # TODO - would be nice to know for certain that we're homed
+        # - might need an ask to Bisque
         self.find_home()
         self.parkdnd()
+        # TODO - throw an exception if it does not show parked
+        # TODO - verify absolute position as above
         self.is_parked()
-
-
-def connect(IP_ADDR='127.0.0.1', TCP_PORT=3040, READBUF=4096):
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((IP_ADDR, TCP_PORT))
-    return s
-
 
 ## Here be the base commands from tsx
 
 ## MOUNT
-APPBUILD = 'Application.Build'
+APPBUILD = 'Application.build'
 MNT_PREAMBLE = 'sky6RASCOMTele'
 PARK = '%s.Park();' % MNT_PREAMBLE
 PARKDND = '%s.ParkAndDoNotDisconnect();' % MNT_PREAMBLE
 IS_PARKED = '%s.IsParked();' % MNT_PREAMBLE
 UNPARK = '%s.Unpark();' % MNT_PREAMBLE
 FIND_HOME = '%s.FindHome();' % MNT_PREAMBLE
-
-
-
-
-
-
-
-
-## old command set. Probably don't need these
-## TODO - delete these at some point
-
-JS_KEY_START = """
-    /* Java Script */
-    /* Socket Start Packet */
-"""
-
-JS_KEY_END = """
-    /* Socket End Packet */
-"""
-
-POLL_STATE = """
-    %s
-    ccdsoftCamera.State
-    %s
-""" % (JS_KEY_START, JS_KEY_END)
-
-PARK_MOUNT = """
-    %s
-    ccdsoftAutoguider.Disconnect();
-    ccdsoftCamera.Disconnect();
-    sky6RASCOMTele.Park();
-    %s
-""" % (JS_KEY_START, JS_KEY_END)
