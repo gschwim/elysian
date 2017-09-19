@@ -2,7 +2,6 @@
 
 import time
 import tsxlib
-import tweepy
 
 IP_ADDR = '127.0.0.1'
 
