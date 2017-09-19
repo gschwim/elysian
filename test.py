@@ -2,9 +2,15 @@
 
 import time
 import tsxlib
+import tweepy
 
-IP_ADDR='172.16.254.254'
+IP_ADDR = '127.0.0.1'
 
 mount = tsxlib.mount(IP_ADDR)
 
-mount.tsxcheck()
+try:
+    mount.tsxcheck()
+    mount.is_parked()
+    print ("Worked!\n")
+except:
+    print ("Didn't work\n")

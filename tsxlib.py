@@ -1,7 +1,20 @@
 
-"""
-This module lets me put all the necessary TSX commands into a separate file.
-"""
+
+################################################################################
+## This module will provide the base interactions with The Sky X via the
+## TCP server.
+##
+## It is structured as follows:
+##
+## - connection function - reusable to the other classes, returns values that are
+##   useful for downstream parsing. Each class will rely on this.
+## - class mount() - this class will provide state information of the mount,
+##    as well as allow actions to occur e.g. homing, slewing, parking, etc
+## - class imager() - this class will handle all things that are relevant to cameras,
+##    focusers, rotators, guiders, etc.
+##
+#################################################################################
+
 import socket
 
 class mount(object):
@@ -26,13 +39,13 @@ class mount(object):
         # TODO - debug level
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((self.IP_ADDR, self.TCP_PORT))
-        print 'Sending %s command...' % CMD
+        print ('Sending %s command...' % CMD)
         s.send(bytes('/* Java Script */\n' +
                            '/* Socket Start Packet */\n' + CMD +
                            '\n/* Socket End Packet */\n'))
-        print 'Command has been sent!'
+        print ('Command has been sent!')
         output = s.recv(4096)
-        print 'output is %s' % output
+        print ('output is %s' % output)
 
     ## START - basic command library
 
