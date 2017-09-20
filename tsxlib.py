@@ -8,8 +8,10 @@
 ##
 ## - connection function - reusable to the other classes, returns values that are
 ##   useful for downstream parsing. Each class will rely on this.
+##
 ## - class mount() - this class will provide state information of the mount,
 ##    as well as allow actions to occur e.g. homing, slewing, parking, etc
+##
 ## - class imager() - this class will handle all things that are relevant to cameras,
 ##    focusers, rotators, guiders, etc.
 ##
@@ -17,20 +19,13 @@
 
 import socket
 
-class mount(object):
+class mount():
 
-    def __init__(self, IP_ADDR='127.0.0.1', TCP_PORT=3040, READBUF=4096):
+    def __init__(self, IP_ADDR='127.0.0.1', TCP_PORT=3040, READBUF=4096, output=''):
         self.IP_ADDR = IP_ADDR
         self.TCP_PORT = TCP_PORT
         self.READBUF = READBUF
-
-    def connect(self):
-        # I'm not sure this actually works, socket seems to die immediately
-        # so what's the point?
-        # TODO - delete this if not necessary!!
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((self.IP_ADDR, self.TCP_PORT))
-        return s
+        self.output = 'x'
 
     def send(self, CMD):
         # TODO - connection error handling
@@ -38,28 +33,40 @@ class mount(object):
         # TODO - Sane output
         # TODO - debug level
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((self.IP_ADDR, self.TCP_PORT))
-        print ('Sending %s command...' % CMD)
-        s.send(bytes('/* Java Script */\n' +
-                           '/* Socket Start Packet */\n' + CMD +
-                           '\n/* Socket End Packet */\n'))
-        print ('Command has been sent!')
-        output = s.recv(4096)
-        print ('output is %s' % output)
+        try:
+            s.connect((self.IP_ADDR, self.TCP_PORT))
+            s.send(bytes('/* Java Script */\n' +
+                         '/* Socket Start Packet */\n' + CMD +
+                         '\n/* Socket End Packet */\n'))
+            self.output = s.recv(4096).split('|')
+        except:
+            self.output = 'Error!'
+            return self.output
+        else:
+            return self.output
+
 
     ## START - basic command library
 
     def tsxcheck(self):
-        # make sure TSX is running
-        self.send(APPBUILD)
+        output = self.send(APPBUILD)
+        return self.output
+
     def parkdnd(self):
-        self.send(PARKDND)
+        output = self.send(PARKDND)
+        return self.output
+
     def is_parked(self):
-        self.send(IS_PARKED)
+        output = self.send(IS_PARKED)
+        return self.output
+
     def unpark(self):
-        self.send(UNPARK)
+        output = self.send(UNPARK)
+        return self.output
+
     def find_home(self):
-        self.send(FIND_HOME)
+        output = self.send(FIND_HOME)
+        return self.output
 
     ## END - basic command library
 
@@ -87,8 +94,11 @@ class mount(object):
 
 ## Here be the base commands from tsx
 
-## MOUNT
+
 APPBUILD = 'Application.build'
+
+## MOUNT
+
 MNT_PREAMBLE = 'sky6RASCOMTele'
 PARK = '%s.Park();' % MNT_PREAMBLE
 PARKDND = '%s.ParkAndDoNotDisconnect();' % MNT_PREAMBLE
