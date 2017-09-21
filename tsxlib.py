@@ -30,15 +30,17 @@ class mount():
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             s.connect((self.IP_ADDR, self.TCP_PORT)) # open the socket
-            s.send(bytes(JS_HEADER + MNT_ISCONNECTED + JS_FOOTER)) # see if the mount is connected
-            state = int(s.recv(self.READBUF).split('|')[0])
+            s.send((JS_HEADER + MNT_ISCONNECTED + JS_FOOTER).encode('utf8')) # see if the mount is connected
+            state = int(((s.recv(self.READBUF)).decode('utf8')).split('|')[0].strip())
             if (state != 1):
                 print ('Mount is not connected: %s' % state)
-                s.send(JS_HEADER + MNT_CONNECTANDDONOTUNPARK + JS_FOOTER)
+                s.send((JS_HEADER + MNT_CONNECTANDDONOTUNPARK + JS_FOOTER).encode('utf8'))
                 s.recv(self.READBUF)
-            s.send(bytes(JS_HEADER + CMD + JS_FOOTER))
-            self.output = s.recv(self.READBUF).split('|')
+            s.send((JS_HEADER + CMD + JS_FOOTER).encode('utf8'))
+            self.output = (s.recv(self.READBUF)).decode('utf8').split('|')[0].strip()
+            # TODO - need some error handling here for the right side of the response (self.output[1])
         except:
+            # TODO - give some more useful error handling here
             self.output = 'Error communicating with mount. State was:\n %s' % state
             return self.output
         else:
@@ -112,21 +114,22 @@ class mount():
 
 JS_HEADER = '/* Java Script */\n/* Socket Start Packet */\n'
 JS_FOOTER = '\n/* Socket End Packet */\n'
+MNT_PREAMBLE = 'sky6RASCOMTele'
+THESKY_PREAMBLE = 'sky6RASCOMTheSky'
 
 ## TSX Misc functions
 
 TSX_APPBUILD = 'Application.build'
 TSX_QUIT = 'sky6RASCOMTheSky.Quit()'
 
-## MOUNT
+## MOUNT CONTROL CONSTANTS
 
-MNT_PREAMBLE = 'sky6RASCOMTele'
 MNT_ISCONNECTED = '%s.IsConnected;\n' % MNT_PREAMBLE
 MNT_ASYNCHRONOUS_ON = '%s.Asynchronous = 1\n' % MNT_PREAMBLE
 MNT_ASYNCHRONOUS_OFF = '%s.Asynchronous = 0\n' % MNT_PREAMBLE
 MNT_ASYNCHRONOUS = '%s.Asynchronous\n'
 MNT_CONNECT = '%s.Connect();\n' % MNT_PREAMBLE
-MNT_DISCONNECT = '%s.Disconnect();\n' % MNT_PREAMBLE
+MNT_DISCONNECT = '%s.DisconnectTelescope();\n' % THESKY_PREAMBLE
 MNT_CONNECTANDDONOTUNPARK = '%s.ConnectAndDoNotUnpark();\n' % MNT_PREAMBLE
 MNT_PARK = '%s.Park();\n' % MNT_PREAMBLE
 MNT_PARKANDDONOTDISCONNECT = '%s.ParkAndDoNotDisconnect();\n' % MNT_PREAMBLE
