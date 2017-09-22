@@ -1,10 +1,12 @@
 from setuptools import setup
 
 setup(
-    name='Elysian',
+    name='elysian',
     version='0.01',
-    py_modules=['tsxlib'],
+    py_modules=['tsxlib',
+                'test'
+                ],
     install_requires=[
-        ''
     ]
+
 )
