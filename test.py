@@ -19,6 +19,8 @@ def test1(count):
         time.sleep(5)
         iteration += 1
 
+def test2():
+    pass
 
 
 test1(5)
