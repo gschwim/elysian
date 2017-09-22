@@ -2,6 +2,9 @@
 deprecated/
 .idea/
 pip-selfcheck.json
+bin/
+include/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
