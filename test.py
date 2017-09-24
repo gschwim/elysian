@@ -21,8 +21,9 @@ def test1(count):
         iteration += 1
 
 def test2():
-    pass
+    print('AZAlt: %s' % mount.GetAzAlt())
 
 
-test1(5)
+#test1(5)
+test2()
 

@@ -86,6 +86,10 @@ class mount():
         output = self.send(MNT_FINDHOME)
         return self.output
 
+    def GetAzAlt(self):
+        output = self.send(MNT_GETAZALT)
+        return self.output
+
     ## END - basic command library
 
     # def park_safely(self):
@@ -137,3 +141,4 @@ MNT_PARKANDDONOTDISCONNECT = '%s.ParkAndDoNotDisconnect();\n' % MNT_PREAMBLE
 MNT_ISPARKED = '%s.IsParked();\n' % MNT_PREAMBLE
 MNT_UNPARK = '%s.Unpark();\n' % MNT_PREAMBLE
 MNT_FINDHOME = '%s.FindHome();\n' % MNT_PREAMBLE
+MNT_GETAZALT = '%s.GetAzAlt();\nOut  = String(sky6RASCOMTele.dAz) +"," + String(sky6RASCOMTele.dAlt);\n' % MNT_PREAMBLE
