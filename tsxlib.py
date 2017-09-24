@@ -28,6 +28,7 @@ class mount():
         # TODO - Sane output
         # TODO - debug level
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(10)
         try:
             s.connect((self.IP_ADDR, self.TCP_PORT)) # open the socket
             s.send((JS_HEADER + MNT_ISCONNECTED + JS_FOOTER).encode('utf8')) # see if the mount is connected
