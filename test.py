@@ -16,6 +16,7 @@ def test1(count):
         print('4. Park mount: %s' % mount.ParkAndDoNotDisconnect())
         print('5. Mount parked: %s' % mount.IsParked())
         print('6. Disconnect mount: %s' % mount.Disconnect())
+        print('Sleeping...\n\n')
         time.sleep(5)
         iteration += 1
 

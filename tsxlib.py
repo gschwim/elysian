@@ -33,7 +33,7 @@ class mount():
             s.send((JS_HEADER + MNT_ISCONNECTED + JS_FOOTER).encode('utf8')) # see if the mount is connected
             state = int(((s.recv(self.READBUF)).decode('utf8')).split('|')[0].strip())
             if (state != 1):
-                print ('Mount is not connected: %s' % state)
+                #print ('Mount is not connected: %s' % state)
                 s.send((JS_HEADER + MNT_CONNECTANDDONOTUNPARK + JS_FOOTER).encode('utf8'))
                 s.recv(self.READBUF)
             s.send((JS_HEADER + CMD + JS_FOOTER).encode('utf8'))
