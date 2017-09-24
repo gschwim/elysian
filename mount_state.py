@@ -8,10 +8,9 @@ import click, time, tsxlib
 def mount_state(ip):
     mount = tsxlib.mount(ip)
     try:
-        state = mount.IsParked()
         output = {
             'time': time.ctime(),
-            'parked': state
+            'parked': mount.IsParked()
         }
         print(output)
         return output
