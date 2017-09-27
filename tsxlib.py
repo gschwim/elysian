@@ -141,4 +141,5 @@ MNT_PARKANDDONOTDISCONNECT = '%s.ParkAndDoNotDisconnect();\n' % MNT_PREAMBLE
 MNT_ISPARKED = '%s.IsParked();\n' % MNT_PREAMBLE
 MNT_UNPARK = '%s.Unpark();\n' % MNT_PREAMBLE
 MNT_FINDHOME = '%s.FindHome();\n' % MNT_PREAMBLE
-MNT_GETAZALT = '%s.GetAzAlt();\nOut  = String(sky6RASCOMTele.dAz) +"," + String(sky6RASCOMTele.dAlt);\n' % MNT_PREAMBLE
+MNT_GETAZALT = '%s.GetAzAlt();\n' \
+               'Out  = String(sky6RASCOMTele.dAz) + "," + String(sky6RASCOMTele.dAlt);\n' % MNT_PREAMBLE

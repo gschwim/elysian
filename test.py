@@ -20,10 +20,10 @@ def test1(count):
         time.sleep(5)
         iteration += 1
 
-def test2():
-    print('AZAlt: %s' % mount.GetAzAlt())
+# def test2():
+#     print('AzAlt: %s' % mount.tsxQuit())
 
 
-#test1(5)
-test2()
+test1(5)
+#test2()
 
