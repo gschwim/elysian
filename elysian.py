@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import click, time, tsxlib
+import click, time, tsxlib, json
 
 @click.group()
 def cli():
@@ -15,7 +15,6 @@ def cli():
 #     pass
 #
 # # cli = click.CommandCollection(sources=[mount, camera])
-
 
 
 @cli.command()
@@ -37,6 +36,13 @@ def mount_state(ip, plain):
         state = 'Could not enumerate mount park state!'
         print(state)
         return state
+
+@cli.command()
+@click.option('--ip', required=True)
+def mount_status(ip):
+    mount = tsxlib.mount(ip)
+    print(json.dumps(mount.GetStatus()))
+
 
 @cli.command()
 @click.option('--ip', default='127.0.0.1')
