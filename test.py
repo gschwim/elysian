@@ -26,10 +26,13 @@ def test2():
     for key in data:
         print('Keys found: %s' % key)
         for subkey in data[key]:
-            print(subkey, data[key][subkey])
-    #print('### Mount Status ###\n %s' % mount.GetStatus())
+            print(subkey + ': ' + data[key][subkey])
 
+def test3():
+    data = mount.IsParked()
+    print('Data is: %s' % data)
 
-test1(5)
-# test2()
+#test1(5)
+test2()
+test3()
 

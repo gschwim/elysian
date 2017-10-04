@@ -23,12 +23,13 @@ class mount():
         self.output = 'x'
 
     def send(self, CMD):
-        # TODO - connection error handling
+        # TODO - connection error handling <- is the below sufficient?
         # TODO - logging of actions
-        # TODO - Sane output
+        # TODO - Sane output <- moving towards dict
         # TODO - debug level
+        # TODO - may need to break out send/conn handling so we can prevent recursive loops
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(10)
+        s.settimeout(10) # TODO - why did I put this in here? Bisque says wait > script timeout of 300s?
         try:
             s.connect((self.IP_ADDR, self.TCP_PORT)) # open the socket
             s.send((JS_HEADER + MNT_ISCONNECTED + JS_FOOTER).encode('utf8')) # see if the mount is connected
@@ -82,8 +83,20 @@ class mount():
         return self.output
 
     def IsParked(self):
-        output = self.send(MNT_ISPARKED)
-        return self.output
+        data = self.send(MNT_ISPARKED)
+        output = {
+            'parked': data
+        }
+        return output
+
+    def IsConnected(self):
+        data = self.send(MNT_ISCONNECTED)
+        if int(data) == 1:
+            data = 'true'
+        else:
+            data = 'false'
+        output = { 'connected': data }
+        return output
 
     def Unpark(self):
         output = self.send(MNT_UNPARK)
@@ -96,27 +109,57 @@ class mount():
     def GetAzAlt(self):
         data = self.send(MNT_GETAZALT).split(',')
         output = {
-            'Azimuth' : data[0],
-            'Altitude' : data[1]
+            'azimuth' : data[0],
+            'altitude' : data[1]
         }
         return output
 
     def GetRaDec(self):
         data = self.send(MNT_GETRADEC).split(',')
         output = {
-            'Ra': data[0],
-            'Dec': data[1]
+            'ra': data[0],
+            'dec': data[1]
         }
         return output
 
+    def GetTrackingStatus(self):
+        data_rate = self.send(MNT_GETTRACKINGRATE).split(',')
+        data_is_tracking = self.send(MNT_ISTRACKING)
+        if int(data_is_tracking) == 1:
+            data_is_tracking = 'true'
+        else:
+            data_is_tracking = 'false'
+        output = {
+            'is_tracking': data_is_tracking,
+            'tracking_rate_Ra': data_rate[0],
+            'tracking_rate_Dec': data_rate[1]
+        }
+        return output
+
+    def IsSlewComplete(self):
+        data = self.send(MNT_ISSLEWCOMPLETE)
+        if int(data) == 1:
+            data = 'not slewing'
+        else:
+            data = 'slewing'
+        output = { 'slew': data }
+        return output
+
     def GetStatus(self):
-        status_connection = self.send(MNT_ISCONNECTED)
+        status_connection = self.IsConnected()
         status_parked = self.IsParked()
+        status_slewing = self.IsSlewComplete()
+        status_tracking = self.GetTrackingStatus()
         status_AzAlt = self.GetAzAlt()
         status_RaDec = self.GetRaDec()
         output = {
+            'Parked': status_parked,
+            'Connected': status_connection,
+            'Slewing': status_slewing,
+            'Tracking': status_tracking,
             'AzAlt': status_AzAlt,
             'RaDec': status_RaDec
+
         }
         return output
 
@@ -171,11 +214,11 @@ MNT_PARKANDDONOTDISCONNECT = '%s.ParkAndDoNotDisconnect();\n' % MNT_PREAMBLE
 MNT_ISPARKED = '%s.IsParked();\n' % MNT_PREAMBLE
 MNT_UNPARK = '%s.Unpark();\n' % MNT_PREAMBLE
 MNT_FINDHOME = '%s.FindHome();\n' % MNT_PREAMBLE
+MNT_ISTRACKING = 'Out = String(%s.IsTracking);' % MNT_PREAMBLE
+MNT_ISSLEWCOMPLETE = 'Out = String(%s.IsSlewComplete);' % MNT_PREAMBLE
+# TODO clean up and use MNT_PREAMBLE below
 MNT_GETAZALT = '%s.GetAzAlt();\n' \
                'Out  = String(sky6RASCOMTele.dAz) + "," + String(sky6RASCOMTele.dAlt);\n' % MNT_PREAMBLE
 MNT_GETRADEC = '%s.GetRaDec();\n' \
-               'OutRaDec  = String(sky6RASCOMTele.dRa) + "," + String(sky6RASCOMTele.dDec);\n' % MNT_PREAMBLE
-MNT_STATUS =    '%s.GetAzAlt(); \
-                %s.GetRaDec(); \
-                OutRaDec = String(sky6RASCOMTele.dRa) + "," + String(sky6RASCOMTele.dDec); \
-                Out  = String(sky6RASCOMTele.dAz) + "," + String(sky6RASCOMTele.dAlt);' % (MNT_PREAMBLE, MNT_PREAMBLE)
+               'Out  = String(sky6RASCOMTele.dRa) + "," + String(sky6RASCOMTele.dDec);\n' % MNT_PREAMBLE
+MNT_GETTRACKINGRATE = 'Out = String(sky6RASCOMTele.dRaTrackingRate) + "," + String(sky6RASCOMTele.dDecTrackingRate);'
