@@ -28,7 +28,7 @@ def mount_state(ip, plain):
             'parked': mount.IsParked()
         }
         if plain:
-            print(output['parked'])
+            print(output['parked']['parked'])
         else:
             print(output)
             return output
