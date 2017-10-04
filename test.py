@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import tsxlib, time
+import tsxlib, time, json
 
 IP_ADDR = '172.16.254.254'
 mount = tsxlib.mount(IP_ADDR)
@@ -20,10 +20,16 @@ def test1(count):
         time.sleep(5)
         iteration += 1
 
-# def test2():
-#     print('AzAlt: %s' % mount.tsxQuit())
+def test2():
+    data = mount.GetStatus()
+    print('Raw Data: %s' % data)
+    for key in data:
+        print('Keys found: %s' % key)
+        for subkey in data[key]:
+            print(subkey, data[key][subkey])
+    #print('### Mount Status ###\n %s' % mount.GetStatus())
 
 
 test1(5)
-#test2()
+# test2()
 

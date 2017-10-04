@@ -12,7 +12,7 @@
 ##
 #################################################################################
 
-import socket, time
+import socket, time, json
 
 class mount():
 
@@ -37,9 +37,16 @@ class mount():
                 #print ('Mount is not connected: %s' % state)
                 s.send((JS_HEADER + MNT_CONNECTANDDONOTUNPARK + JS_FOOTER).encode('utf8'))
                 s.recv(self.READBUF)
-            s.send((JS_HEADER + CMD + JS_FOOTER).encode('utf8'))
+            # TODO - Pre Status
+            #s.send((JS_HEADER + MNT_STATUS + JS_FOOTER).encode('utf8'))
+
+
+
+            s.send((JS_HEADER + CMD + JS_FOOTER).encode('utf8')) # send the command
+            # TODO - Post Status
             self.output = (s.recv(self.READBUF)).decode('utf8').split('|')[0].strip()
             # TODO - need some error handling here for the right side of the response (self.output[1])
+            # TODO - thinking that this might just be in the dict for response, let the client split it
         except:
             # TODO - give some more useful error handling here
             self.output = 'Error communicating with mount. State was:\n %s' % state
@@ -87,8 +94,31 @@ class mount():
         return self.output
 
     def GetAzAlt(self):
-        output = self.send(MNT_GETAZALT)
-        return self.output
+        data = self.send(MNT_GETAZALT).split(',')
+        output = {
+            'Azimuth' : data[0],
+            'Altitude' : data[1]
+        }
+        return output
+
+    def GetRaDec(self):
+        data = self.send(MNT_GETRADEC).split(',')
+        output = {
+            'Ra': data[0],
+            'Dec': data[1]
+        }
+        return output
+
+    def GetStatus(self):
+        status_connection = self.send(MNT_ISCONNECTED)
+        status_parked = self.IsParked()
+        status_AzAlt = self.GetAzAlt()
+        status_RaDec = self.GetRaDec()
+        output = {
+            'AzAlt': status_AzAlt,
+            'RaDec': status_RaDec
+        }
+        return output
 
     ## END - basic command library
 
@@ -143,3 +173,9 @@ MNT_UNPARK = '%s.Unpark();\n' % MNT_PREAMBLE
 MNT_FINDHOME = '%s.FindHome();\n' % MNT_PREAMBLE
 MNT_GETAZALT = '%s.GetAzAlt();\n' \
                'Out  = String(sky6RASCOMTele.dAz) + "," + String(sky6RASCOMTele.dAlt);\n' % MNT_PREAMBLE
+MNT_GETRADEC = '%s.GetRaDec();\n' \
+               'OutRaDec  = String(sky6RASCOMTele.dRa) + "," + String(sky6RASCOMTele.dDec);\n' % MNT_PREAMBLE
+MNT_STATUS =    '%s.GetAzAlt(); \
+                %s.GetRaDec(); \
+                OutRaDec = String(sky6RASCOMTele.dRa) + "," + String(sky6RASCOMTele.dDec); \
+                Out  = String(sky6RASCOMTele.dAz) + "," + String(sky6RASCOMTele.dAlt);' % (MNT_PREAMBLE, MNT_PREAMBLE)
