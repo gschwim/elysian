@@ -38,19 +38,13 @@ class mount():
                 #print ('Mount is not connected: %s' % state)
                 s.send((JS_HEADER + MNT_CONNECTANDDONOTUNPARK + JS_FOOTER).encode('utf8'))
                 s.recv(self.READBUF)
-            # TODO - Pre Status
-            #s.send((JS_HEADER + MNT_STATUS + JS_FOOTER).encode('utf8'))
-
-
-
             s.send((JS_HEADER + CMD + JS_FOOTER).encode('utf8')) # send the command
-            # TODO - Post Status
             self.output = (s.recv(self.READBUF)).decode('utf8').split('|')[0].strip()
             # TODO - need some error handling here for the right side of the response (self.output[1])
             # TODO - thinking that this might just be in the dict for response, let the client split it
         except:
             # TODO - give some more useful error handling here
-            self.output = 'Error communicating with mount. State was:\n %s' % state
+            self.output = 'ERROR'
             return self.output
         else:
             return self.output
@@ -91,9 +85,11 @@ class mount():
 
     def IsConnected(self):
         data = self.send(MNT_ISCONNECTED)
-        if int(data) == 1:
+        if data == 'ERROR':
+            return data
+        elif int(data) == 1:
             data = 'true'
-        else:
+        elif int(data) == 0:
             data = 'false'
         output = { 'connected': data }
         return output
@@ -138,30 +134,49 @@ class mount():
 
     def IsSlewComplete(self):
         data = self.send(MNT_ISSLEWCOMPLETE)
+        # treating this as slew status, true = slewing
+        # Is it doing it or not, not is it done doing it. Inconsistencies!!
         if int(data) == 1:
-            data = 'not slewing'
+            data = 'false'
         else:
-            data = 'slewing'
+            data = 'true'
         output = { 'slew': data }
         return output
 
     def GetStatus(self):
         status_connection = self.IsConnected()
-        status_parked = self.IsParked()
-        status_slewing = self.IsSlewComplete()
-        status_tracking = self.GetTrackingStatus()
-        status_AzAlt = self.GetAzAlt()
-        status_RaDec = self.GetRaDec()
-        output = {
-            'Parked': status_parked,
-            'Connected': status_connection,
-            'Slewing': status_slewing,
-            'Tracking': status_tracking,
-            'AzAlt': status_AzAlt,
-            'RaDec': status_RaDec
+        if status_connection == 'ERROR':
+            output = {
+                'Polltime': time.ctime(),
+                'Connected': {'connected': 'ERROR'},
+                'Parked': '',
+                'Slewing': '',
+                'Tracking': '',
+                'AzAlt': '',
+                'RaDec': ''
 
-        }
-        return output
+            }
+            return output
+        else:
+            status_parked = self.IsParked()
+            status_slewing = self.IsSlewComplete()
+            status_tracking = self.GetTrackingStatus()
+            status_AzAlt = self.GetAzAlt()
+            status_RaDec = self.GetRaDec()
+            output = {
+                'Polltime': {
+                    'epoch': time.time(),
+                    'ctime': time.ctime()
+                },
+                'Connected': status_connection,
+                'Parked': status_parked,
+                'Slewing': status_slewing,
+                'Tracking': status_tracking,
+                'AzAlt': status_AzAlt,
+                'RaDec': status_RaDec
+
+            }
+            return output
 
     ## END - basic command library
 

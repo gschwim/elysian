@@ -32,7 +32,7 @@ def test3():
     data = mount.IsParked()
     print('Data is: %s' % data)
 
-#test1(5)
-test2()
-test3()
+test1(3)
+# test2()
+# test3()
 

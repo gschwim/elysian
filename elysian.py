@@ -1,20 +1,11 @@
 #!/usr/bin/python3
 
 import click, time, tsxlib, json
+import paho.mqtt.client as mqtt
 
 @click.group()
 def cli():
     pass
-#
-# @click.group()
-# def mount():
-#     pass
-#
-# @click.group()
-# def camera():
-#     pass
-#
-# # cli = click.CommandCollection(sources=[mount, camera])
 
 
 @cli.command()
@@ -39,9 +30,12 @@ def mount_state(ip, plain):
 
 @cli.command()
 @click.option('--ip', required=True)
-def mount_status(ip):
-    mount = tsxlib.mount(ip)
-    print(json.dumps(mount.GetStatus()))
+@click.option('--mqtt-ip')
+@click.option('--mqtt-topic')
+def mount_status(ip, mqtt_ip, mqtt_topic):
+    data = tsxlib.mount(ip).GetStatus()
+    mqtt_publish(mqtt_ip, mqtt_topic, json.dumps(data))
+
 
 
 @cli.command()
@@ -76,6 +70,12 @@ def park(ip, plain):
 #
 # # mount.add_command(park)
 # # camera.add_command(image)
+
+def mqtt_publish(mqtt_ip, mqtt_topic, data):
+    mqttc = mqtt.Client(client_id="elysian")
+    mqttc.connect(mqtt_ip)
+    mqttc.publish(mqtt_topic, str(data))
+    mqttc.loop(2)
 
 
 
