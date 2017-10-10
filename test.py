@@ -28,11 +28,15 @@ def test2():
         for subkey in data[key]:
             print(subkey + ': ' + data[key][subkey])
 
-def test3():
-    data = mount.IsParked()
-    print('Data is: %s' % data)
+def test3(count):
+    iteration = 1
+    while (iteration < count):
+        data = mount.GetStatus()
+        print('Data is: %s' % data)
+        time.sleep(1)
+        iteration += 1
 
-test1(3)
-# test2()
-# test3()
+#test1(3)
+#test2()
+test3(100)
 

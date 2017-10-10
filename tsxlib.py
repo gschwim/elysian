@@ -22,31 +22,73 @@ class mount():
         self.READBUF = READBUF
         self.output = 'x'
 
-    def send(self, CMD):
+    def send(self, CMD, async=1):
         # TODO - connection error handling <- is the below sufficient?
         # TODO - logging of actions
         # TODO - Sane output <- moving towards dict
         # TODO - debug level
         # TODO - may need to break out send/conn handling so we can prevent recursive loops
+
+        # This method is called by the other methods of the class
+        # It handles the socket connection and sending commands
+        # as well as receiving the output. One command is intended to be passed
+        # through at a time such that all logic is handled here or in the client
+        # and not with TSX.
+        #
+        # DEFAULTS:
+        # async = 1 because async behavior is easier to deal with
+
+        # define the socket and try connecting to it
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(10) # TODO - why did I put this in here? Bisque says wait > script timeout of 300s?
         try:
+            time.sleep(.25) # TSX seems to balk at fast commands from time to time
             s.connect((self.IP_ADDR, self.TCP_PORT)) # open the socket
-            s.send((JS_HEADER + MNT_ISCONNECTED + JS_FOOTER).encode('utf8')) # see if the mount is connected
-            state = int(((s.recv(self.READBUF)).decode('utf8')).split('|')[0].strip())
-            if (state != 1):
-                #print ('Mount is not connected: %s' % state)
+            s.send((JS_HEADER + MNT_ISCONNECTED
+                    + JS_FOOTER).encode('utf8')) # see if the mount is connected
+            state = ((s.recv(self.READBUF)).decode('utf8')).split('|')
+            #print("%s // %s" % (state[0], state[1]))
+
+            # Test that TSX is connected to the mount. If not, try 3x to make it do that.
+            iteration = 1
+            while (int(state[0]) != 1 and iteration <= 3):
+                # attempt to make the connection
+                #print('Not connected. Trying...')
+                time.sleep(.5)
                 s.send((JS_HEADER + MNT_CONNECTANDDONOTUNPARK + JS_FOOTER).encode('utf8'))
-                s.recv(self.READBUF)
-            s.send((JS_HEADER + CMD + JS_FOOTER).encode('utf8')) # send the command
-            self.output = (s.recv(self.READBUF)).decode('utf8').split('|')[0].strip()
-            # TODO - need some error handling here for the right side of the response (self.output[1])
-            # TODO - thinking that this might just be in the dict for response, let the client split it
+                s.recv(self.READBUF) #clear the buffer. TODO - There must be a cleaner way...
+
+                # ask if the mount is connected now
+                s.send((JS_HEADER + MNT_ISCONNECTED + JS_FOOTER).encode('utf8'))
+                state = ((s.recv(self.READBUF)).decode('utf8')).split('|')
+                #print("Can't connect to mount: %s // %s" % (state[0], state[1]))
+                iteration += 1
+
+            # if we still can't get a connection, return an error
+            if (int(state[0]) != 1):
+                self.output = tsx_rational_errors(state)
+                return self.output
+
         except:
-            # TODO - give some more useful error handling here
-            self.output = 'ERROR'
+            # print('failed to open socket')
+
+            # socket could not be open, return an error in the same format as TSX for consistency
+            self.output = tsx_rational_errors(('6666', 'Error connecting to TSX!'))
             return self.output
         else:
+            # things must be going peachy. Let's do some work!
+
+            # test if async should be on or off. Default is ON.
+            if async == 0:
+                # someone wants async commands turned off!
+                print('Turning Async off')
+                s.send((JS_HEADER + MNT_ASYNCHRONOUS_OFF + JS_FOOTER).encode('utf8'))
+                s.recv(self.READBUF) # TODO - clear the buffer more cleanly
+                s.send((JS_HEADER + CMD + JS_FOOTER).encode('utf8'))  # send the command
+            else:
+                s.send((JS_HEADER + CMD + JS_FOOTER).encode('utf8'))
+            self.output = tsx_rational_errors((s.recv(self.READBUF)).decode('utf8').split('|'))
+
             return self.output
 
     ## START - basic command library
@@ -54,11 +96,11 @@ class mount():
     def tsxCheck(self):
         # TODO - move this to a general app status class or something
         output = self.send(TSX_APPBUILD)
-        return self.output
+        return output
 
     def tsxQuit(self):
         output = self.send(TSX_QUIT)
-        return self.output
+        return output
 
     def Connect(self):
         output = self.send(MNT_CONNECT)
@@ -74,53 +116,56 @@ class mount():
 
     def ParkAndDoNotDisconnect(self):
         output = self.send(MNT_PARKANDDONOTDISCONNECT)
-        return self.output
+        return output
 
     def IsParked(self):
         data = self.send(MNT_ISPARKED)
+
         output = {
-            'parked': data
+            'parked': data[0]
         }
+        # print(output)
         return output
 
     def IsConnected(self):
-        data = self.send(MNT_ISCONNECTED)
-        if data == 'ERROR':
-            return data
-        elif int(data) == 1:
+        data = self.send(MNT_ISCONNECTED)[0]
+        if int(data) == 1:
             data = 'true'
         elif int(data) == 0:
             data = 'false'
         output = { 'connected': data }
+        #print(output)
         return output
 
     def Unpark(self):
         output = self.send(MNT_UNPARK)
-        return self.output
+        return output
 
     def FindHome(self):
         output = self.send(MNT_FINDHOME)
-        return self.output
+        return output
 
     def GetAzAlt(self):
-        data = self.send(MNT_GETAZALT).split(',')
+        data = self.send(MNT_GETAZALT)[0].split(',')
         output = {
             'azimuth' : data[0],
             'altitude' : data[1]
         }
+        #print(output)
         return output
 
     def GetRaDec(self):
-        data = self.send(MNT_GETRADEC).split(',')
+        data = self.send(MNT_GETRADEC)[0].split(',')
         output = {
             'ra': data[0],
             'dec': data[1]
         }
+        #print(output)
         return output
 
     def GetTrackingStatus(self):
-        data_rate = self.send(MNT_GETTRACKINGRATE).split(',')
-        data_is_tracking = self.send(MNT_ISTRACKING)
+        data_rate = self.send(MNT_GETTRACKINGRATE)[0].split(',')
+        data_is_tracking = self.send(MNT_ISTRACKING)[0]
         if int(data_is_tracking) == 1:
             data_is_tracking = 'true'
         else:
@@ -130,53 +175,57 @@ class mount():
             'tracking_rate_Ra': data_rate[0],
             'tracking_rate_Dec': data_rate[1]
         }
+        #print(output)
         return output
 
     def IsSlewComplete(self):
         data = self.send(MNT_ISSLEWCOMPLETE)
+        #data = tsx_rational_errors(data)
+
         # treating this as slew status, true = slewing
         # Is it doing it or not, not is it done doing it. Inconsistencies!!
-        if int(data) == 1:
+        if int(data[0]) == 1:
             data = 'false'
         else:
             data = 'true'
         output = { 'slew': data }
+        #print(output)
         return output
 
     def GetStatus(self):
         status_connection = self.IsConnected()
-        if status_connection == 'ERROR':
-            output = {
-                'Polltime': time.ctime(),
-                'Connected': {'connected': 'ERROR'},
-                'Parked': '',
-                'Slewing': '',
-                'Tracking': '',
-                'AzAlt': '',
-                'RaDec': ''
-
+        #print(status_connection)
+        # if status_connection == 666:
+        #     output = {
+        #         'Polltime': time.ctime(),
+        #         'Error': 'Error',
+        #         'Connected': {'connected': 'ERROR'},
+        #         'Parked': '',
+        #         'Slewing': '',
+        #         'Tracking': '',
+        #         'AzAlt': '',
+        #         'RaDec': ''
+        #     }
+        #     return output
+        # else:
+        status_parked = self.IsParked()
+        status_slewing = self.IsSlewComplete()
+        status_tracking = self.GetTrackingStatus()
+        status_AzAlt = self.GetAzAlt()
+        status_RaDec = self.GetRaDec()
+        output = {
+            'Polltime': {
+                'epoch': time.time(),
+                'ctime': time.ctime()
+            },
+            'Connected': status_connection,
+            'Parked': status_parked,
+            'Slewing': status_slewing,
+            'Tracking': status_tracking,
+            'AzAlt': status_AzAlt,
+            'RaDec': status_RaDec
             }
-            return output
-        else:
-            status_parked = self.IsParked()
-            status_slewing = self.IsSlewComplete()
-            status_tracking = self.GetTrackingStatus()
-            status_AzAlt = self.GetAzAlt()
-            status_RaDec = self.GetRaDec()
-            output = {
-                'Polltime': {
-                    'epoch': time.time(),
-                    'ctime': time.ctime()
-                },
-                'Connected': status_connection,
-                'Parked': status_parked,
-                'Slewing': status_slewing,
-                'Tracking': status_tracking,
-                'AzAlt': status_AzAlt,
-                'RaDec': status_RaDec
-
-            }
-            return output
+        return output
 
     ## END - basic command library
 
@@ -202,6 +251,22 @@ class mount():
     #     # TODO - verify absolute position as above
     #     self.is_parked()
 
+
+class camera():
+    pass
+
+
+def tsx_rational_errors(tsx_result):
+
+    # [0] of the return has the result of the command
+    # [1] has the result of the script
+    # We may need to know context to know which side to look at
+    # TODO - map things as appropriate
+    # TODO - reference http://www.bisque.com/x2standard/sberrorx_8h_source.html
+
+    #print('TSX Result is %s // %s' % (tsx_result[0], tsx_result[1]))
+    output = tsx_result
+    return output
 
 ## Here be the base commands from tsx
 
