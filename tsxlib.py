@@ -66,6 +66,7 @@ class mount():
 
             # if we still can't get a connection, return an error
             if (int(state[0]) != 1):
+                #print('state is %s' % state)
                 self.output = tsx_rational_errors(state)
                 return self.output
 
@@ -133,6 +134,8 @@ class mount():
             data = 'true'
         elif int(data) == 0:
             data = 'false'
+        else:
+            data = 'ERROR'
         output = { 'connected': data }
         #print(output)
         return output
