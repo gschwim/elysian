@@ -197,37 +197,37 @@ class mount():
 
     def GetStatus(self):
         status_connection = self.IsConnected()
-        #print(status_connection)
-        # if status_connection == 666:
-        #     output = {
-        #         'Polltime': time.ctime(),
-        #         'Error': 'Error',
-        #         'Connected': {'connected': 'ERROR'},
-        #         'Parked': '',
-        #         'Slewing': '',
-        #         'Tracking': '',
-        #         'AzAlt': '',
-        #         'RaDec': ''
-        #     }
-        #     return output
-        # else:
-        status_parked = self.IsParked()
-        status_slewing = self.IsSlewComplete()
-        status_tracking = self.GetTrackingStatus()
-        status_AzAlt = self.GetAzAlt()
-        status_RaDec = self.GetRaDec()
-        output = {
-            'Polltime': {
-                'epoch': time.time(),
-                'ctime': time.ctime()
-            },
-            'Connected': status_connection,
-            'Parked': status_parked,
-            'Slewing': status_slewing,
-            'Tracking': status_tracking,
-            'AzAlt': status_AzAlt,
-            'RaDec': status_RaDec
+        print(status_connection['connected'])
+        if status_connection['connected'] != 'true':
+            output = {
+                'Polltime': time.ctime(),
+                'Error': 'Error',
+                'Connected': status_connection,
+                'Parked': '',
+                'Slewing': '',
+                'Tracking': '',
+                'AzAlt': '',
+                'RaDec': ''
             }
+            return output
+        else:
+            status_parked = self.IsParked()
+            status_slewing = self.IsSlewComplete()
+            status_tracking = self.GetTrackingStatus()
+            status_AzAlt = self.GetAzAlt()
+            status_RaDec = self.GetRaDec()
+            output = {
+                'Polltime': {
+                    'epoch': time.time(),
+                    'ctime': time.ctime()
+                },
+                'Connected': status_connection,
+                'Parked': status_parked,
+                'Slewing': status_slewing,
+                'Tracking': status_tracking,
+                'AzAlt': status_AzAlt,
+                'RaDec': status_RaDec
+                }
         return output
 
     ## END - basic command library
