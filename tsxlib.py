@@ -197,7 +197,7 @@ class mount():
 
     def GetStatus(self):
         status_connection = self.IsConnected()
-        print(status_connection['connected'])
+        #print(status_connection['connected'])
         if status_connection['connected'] != 'true':
             output = {
                 'Polltime': time.ctime(),
