@@ -148,6 +148,10 @@ class mount():
         output = self.send(MNT_FINDHOME)
         return output
 
+    def GetObjInfoName(self):
+        output = self.send(MNT_OBJINFO_NAME)[0]
+        return output
+
     def GetAzAlt(self):
         data = self.send(MNT_GETAZALT)[0].split(',')
         output = {
@@ -164,6 +168,16 @@ class mount():
             'dec': data[1]
         }
         #print(output)
+        return output
+
+    def OTASideOfPier(self):
+        data = self.send(MNT_SIDEOFPIER)[0]
+        if data == '1':
+            output = 'west'
+        elif data == '0':
+            output = 'east'
+        else:
+            output = 'error'
         return output
 
     def GetTrackingStatus(self):
@@ -197,7 +211,7 @@ class mount():
 
     def GetStatus(self):
         status_connection = self.IsConnected()
-        print(status_connection['connected'])
+        #print(status_connection['connected'])
         if status_connection['connected'] != 'true':
             output = {
                 'Polltime': time.ctime(),
@@ -212,10 +226,12 @@ class mount():
             return output
         else:
             status_parked = self.IsParked()
+            status_sideofpier = self.OTASideOfPier()
             status_slewing = self.IsSlewComplete()
             status_tracking = self.GetTrackingStatus()
             status_AzAlt = self.GetAzAlt()
             status_RaDec = self.GetRaDec()
+            status_ObjName = self.GetObjInfoName()
             output = {
                 'Polltime': {
                     'epoch': time.time(),
@@ -223,10 +239,12 @@ class mount():
                 },
                 'Connected': status_connection,
                 'Parked': status_parked,
+                'OTAPierSide': status_sideofpier,
                 'Slewing': status_slewing,
                 'Tracking': status_tracking,
                 'AzAlt': status_AzAlt,
-                'RaDec': status_RaDec
+                'RaDec': status_RaDec,
+                'Object': status_ObjName
                 }
         return output
 
@@ -305,3 +323,5 @@ MNT_GETAZALT = '%s.GetAzAlt();\n' \
 MNT_GETRADEC = '%s.GetRaDec();\n' \
                'Out  = String(sky6RASCOMTele.dRa) + "," + String(sky6RASCOMTele.dDec);\n' % MNT_PREAMBLE
 MNT_GETTRACKINGRATE = 'Out = String(sky6RASCOMTele.dRaTrackingRate) + "," + String(sky6RASCOMTele.dDecTrackingRate);'
+MNT_OBJINFO_NAME = 'sky6ObjectInformation.Property(0); Out = sky6ObjectInformation.ObjInfoPropOut;'
+MNT_SIDEOFPIER = '%s.DoCommand(11,""); Out = %s.DoCommandOutput;' % (MNT_PREAMBLE, MNT_PREAMBLE)
