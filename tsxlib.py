@@ -148,6 +148,10 @@ class mount():
         output = self.send(MNT_FINDHOME)
         return output
 
+    def GetObjInfo(self):
+        output = self.send(MNT_OBJINFO_NAME)[0]
+        return output
+
     def GetAzAlt(self):
         data = self.send(MNT_GETAZALT)[0].split(',')
         output = {
@@ -216,6 +220,7 @@ class mount():
             status_tracking = self.GetTrackingStatus()
             status_AzAlt = self.GetAzAlt()
             status_RaDec = self.GetRaDec()
+            status_obj = self.GetObjInfo()
             output = {
                 'Polltime': {
                     'epoch': time.time(),
@@ -226,7 +231,8 @@ class mount():
                 'Slewing': status_slewing,
                 'Tracking': status_tracking,
                 'AzAlt': status_AzAlt,
-                'RaDec': status_RaDec
+                'RaDec': status_RaDec,
+                'Object': status_obj
                 }
         return output
 
@@ -305,3 +311,4 @@ MNT_GETAZALT = '%s.GetAzAlt();\n' \
 MNT_GETRADEC = '%s.GetRaDec();\n' \
                'Out  = String(sky6RASCOMTele.dRa) + "," + String(sky6RASCOMTele.dDec);\n' % MNT_PREAMBLE
 MNT_GETTRACKINGRATE = 'Out = String(sky6RASCOMTele.dRaTrackingRate) + "," + String(sky6RASCOMTele.dDecTrackingRate);'
+MNT_OBJINFO_NAME = 'sky6ObjectInformation.Property(1); Out = sky6ObjectInformation.ObjInfoPropOut;'
