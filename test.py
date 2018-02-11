@@ -2,9 +2,14 @@
 
 import tsxlib, time, json
 
-IP_ADDR = '172.16.254.254'
+IP_ADDR = '127.0.0.1'
 mount = tsxlib.mount(IP_ADDR)
+camera = tsxlib.camera(IP_ADDR)
 
+def camtest1():
+    camera.GetStatus2()
+
+camtest1()
 
 def test1(count):
     iteration = 1
@@ -38,5 +43,5 @@ def test3(count):
 
 #test1(3)
 #test2()
-test3(100)
+#test3(100)
 

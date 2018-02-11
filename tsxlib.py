@@ -272,9 +272,43 @@ class mount():
     #     # TODO - verify absolute position as above
     #     self.is_parked()
 
+class tsxControl():
+    def __init__(self, IP_ADDR='127.0.0.1', TCP_PORT=3040, READBUF=4096, output=''):
+        self.IP_ADDR = IP_ADDR
+        self.TCP_PORT = TCP_PORT
+        self.READBUF = READBUF
+        self.output = output
+        self.socket = socket.create_connection((self.IP_ADDR, self.TCP_PORT))
+        self.send(MNT_ASYNCHRONOUS_ON)
+        if (int(self.recv()[0]) != 1):
+            raise ValueError('Can\'t set async on')
 
-class camera():
-    pass
+    def send(self, CMD):
+        self.socket.send((JS_HEADER).encode('utf8'))
+        # TODO - allow handling lists in CMD
+        self.socket.send((CMD).encode('utf8'))
+        self.socket.send((JS_FOOTER).encode('utf8'))
+
+    def recv(self):
+        output = ((self.socket.recv(self.READBUF)).decode('utf8')).split('|')
+        return output
+
+class camera(tsxControl):
+
+    def GetStatus(self):
+        s = socket.create_connection((self.IP_ADDR, self.TCP_PORT))
+        s.send((TSX_APPBUILD).encode('utf8'))
+        output = s.recv(self.READBUF)
+        print('output is %s' % output)
+        return output
+
+    def GetStatus2(self):
+        self.send(TSX_APPBUILD)
+        output = self.recv()
+        print(output)
+
+    #TODO - move these to generic functions outside of the class so they can be reused
+
 
 
 def tsx_rational_errors(tsx_result):
