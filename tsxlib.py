@@ -279,9 +279,12 @@ class tsxControl():
         self.READBUF = READBUF
         self.output = output
         self.socket = socket.create_connection((self.IP_ADDR, self.TCP_PORT))
-        self.send(MNT_ASYNCHRONOUS_ON)
-        if (int(self.recv()[0]) != 1):
-            raise ValueError('Can\'t set async on')
+        self.send(TSX_APPBUILD)
+        if (self.recv()[2] != 0):
+            raise ValueError('Error reading TSX state')
+        self.send(CAM_ASYNCHRONOUS_ON)
+        if (self.recv()[2] != 0):
+            raise ValueError('Enabling async mode failed!')
 
     def send(self, CMD):
         self.socket.send((JS_HEADER).encode('utf8'))
@@ -291,21 +294,52 @@ class tsxControl():
 
     def recv(self):
         output = ((self.socket.recv(self.READBUF)).decode('utf8')).split('|')
+        #print('Debug: %s' % output)
+        # Split up TSX output so you get the result, the verbose error, and error code
+        # Postitional format:
+        # 0 = result (string because I can't guarantee an int is always returned. Handle this downstream.)
+        # 1 = verbose error (string)
+        # 2 = error code (int)
+        output = (str(output[0]), str(output[1].split('.')[0]), int((output[1].split('.')[1]).split('=')[1]))
         return output
 
 class camera(tsxControl):
 
-    def GetStatus(self):
-        s = socket.create_connection((self.IP_ADDR, self.TCP_PORT))
-        s.send((TSX_APPBUILD).encode('utf8'))
-        output = s.recv(self.READBUF)
-        print('output is %s' % output)
-        return output
+    def GetTempStatus(self):
+        # get current temp
+        self.send(CAM_GETCURRENTTEMP)
+        temp_current = self.recv()
 
-    def GetStatus2(self):
-        self.send(TSX_APPBUILD)
+        # get set point
+        self.send(CAM_GETTEMPSETPOINT)
+        temp_setpoint = self.recv()
+
+        # get TEC power utilization
+        self.send(CAM_GETTECPOWERUTIL)
+        tec_powerutil = self.recv()
+
+        output = (temp_current[0],temp_setpoint[0],tec_powerutil[0])
+        return(output)
+
+    def GetStatus(self):
+        # Things we want in this:
+        # Is the camera connected? If not, connect. Except on failure to do so.
+        self.send(CAM_CONNECT)
+        print(self.recv())
+        # What binning is set?
+        # What is the temperature?
+        self.GetTempStatus()
+        # What is it doing right now?
+        # Is the filterwheel connected?
+        # What filter are we on?
+
+        return(output)
+
+    def AtFocus3(self):
+        self.send(CAM_ATFOCUS3)
         output = self.recv()
-        print(output)
+        return(output)
+
 
     #TODO - move these to generic functions outside of the class so they can be reused
 
@@ -329,6 +363,7 @@ JS_HEADER = '/* Java Script */\n/* Socket Start Packet */\n'
 JS_FOOTER = '\n/* Socket End Packet */\n'
 MNT_PREAMBLE = 'sky6RASCOMTele'
 THESKY_PREAMBLE = 'sky6RASCOMTheSky'
+CAM_PREAMBLE = 'ccdsoftCamera'
 
 ## TSX Misc functions
 
@@ -359,3 +394,15 @@ MNT_GETRADEC = '%s.GetRaDec();\n' \
 MNT_GETTRACKINGRATE = 'Out = String(sky6RASCOMTele.dRaTrackingRate) + "," + String(sky6RASCOMTele.dDecTrackingRate);'
 MNT_OBJINFO_NAME = 'sky6ObjectInformation.Property(0); Out = sky6ObjectInformation.ObjInfoPropOut;'
 MNT_SIDEOFPIER = '%s.DoCommand(11,""); Out = %s.DoCommandOutput;' % (MNT_PREAMBLE, MNT_PREAMBLE)
+
+## CAMERA CONTROL CONSTANTS
+
+CAM_ASYNCHRONOUS_ON = '%s.Asynchronous = 1' % CAM_PREAMBLE
+CAM_ASYNCHRONOUS_OFF = '%s.Asynchronous = 0' % CAM_PREAMBLE
+CAM_ASYNCHRONOUS = '%s.Asynchronous' % CAM_PREAMBLE
+CAM_CONNECT = '%s.Connect()' % CAM_PREAMBLE
+CAM_STATE = '%s.State' % CAM_PREAMBLE
+CAM_GETCURRENTTEMP = '%s.Temperature' % CAM_PREAMBLE
+CAM_GETTEMPSETPOINT = '%s.TemperatureSetPoint' % CAM_PREAMBLE
+CAM_GETTECPOWERUTIL = '%s.ThermalElectricCoolerPower' % CAM_PREAMBLE
+CAM_ATFOCUS3 = '%s.AtFocus3(3,true);' % CAM_PREAMBLE

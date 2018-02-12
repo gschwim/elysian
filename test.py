@@ -7,9 +7,18 @@ mount = tsxlib.mount(IP_ADDR)
 camera = tsxlib.camera(IP_ADDR)
 
 def camtest1():
-    camera.GetStatus2()
+    result = camera.GetTempStatus()
+    print(result)
+    #print('Command result: %s\nScript result: %s ' % (str(result[0]), str(result[2])))
+
+def focus():
+    result = camera.AtFocus3()
+    print(result)
+
 
 camtest1()
+focus()
+
 
 def test1(count):
     iteration = 1
